@@ -42,7 +42,7 @@ class Daemonize(object):
     def __init__(self, app, pid, action,
                  keep_fds=None, auto_close_fds=True, privileged_action=None,
                  user=None, group=None, verbose=False, logger=None,
-                 foreground=False, chdir="/"):
+                 foreground=False, chdir="/", args=(), kwargs={}):
         self.app = app
         self.pid = os.path.abspath(pid)
         self.action = action
@@ -55,7 +55,8 @@ class Daemonize(object):
         self.auto_close_fds = auto_close_fds
         self.foreground = foreground
         self.chdir = chdir
-
+        self.args = tuple(args)
+        self.kwargs = dict(kwargs)
     def sigterm(self, signum, frame):
         """
         These actions will be done after SIGTERM.
@@ -245,7 +246,8 @@ class Daemonize(object):
         self.logger.warning("Starting daemon.")
 
         try:
-            self.action(*privileged_action_result)
+            self.args = tuple(privileged_action_result) + self.args
+            self.action(*self.args, **self.kwargs)
         except Exception:
             for line in traceback.format_exc().split("\n"):
                 self.logger.error(line)
